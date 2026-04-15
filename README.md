@@ -272,6 +272,7 @@ DoubtDesk/
 │   ├── email.ts          # Warning/block email helpers
 │   └── auth-utils.ts     # Auth utility functions
 ├── inngest/              # Background job definitions
+├── scripts/              # Developer utility & database scripts
 └── middleware.tsx         # Clerk auth + rate limiting middleware
 ```
 

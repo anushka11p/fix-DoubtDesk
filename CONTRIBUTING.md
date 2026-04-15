@@ -168,6 +168,7 @@ style: fix mobile alignment on doubt cards
 - Components: `/components/<ComponentName>.tsx`
 - Shared utilities: `/lib/<utility>.ts`
 - Database schema: `/configs/schema.ts`
+- Utility scripts: `/scripts/<script>.ts`
 
 ---
 
