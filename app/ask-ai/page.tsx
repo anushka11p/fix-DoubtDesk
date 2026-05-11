@@ -371,7 +371,7 @@ export default function AskAIPage() {
                             <div>
                                 <p className="text-red-400 font-bold text-sm">Oops! Something went wrong 😅</p>
                                 <p className="text-red-400/70 text-xs mt-1">
-                                    {(() => {
+                                    {(() => {       {/* Map technical errors to user-friendly messages */}
                                         const error = errorMsg.toLowerCase();
 
                                         if (error.includes("overloaded")) {
