@@ -102,7 +102,6 @@ export function Provider({ children }: { children: React.ReactNode }) {
             
                 const targetUrl = new URL(anchor.href);
                 const currentUrl = new URL(window.location.href);
-            
                 if (
                     targetUrl.origin === currentUrl.origin &&
                     (targetUrl.pathname !== currentUrl.pathname || targetUrl.search !== currentUrl.search)
@@ -110,10 +109,8 @@ export function Provider({ children }: { children: React.ReactNode }) {
                     setIsNavigating(true);
                 }
             };
-        };
-
-        document.addEventListener("click", handleAnchorClick);
-        return () => document.removeEventListener("click", handleAnchorClick);
+            document.addEventListener("click", handleAnchorClick);
+            return () => document.removeEventListener("click", handleAnchorClick);
     }, []);
 
     useEffect(() => {
