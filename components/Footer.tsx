@@ -75,7 +75,7 @@ export default function Footer() {
       label: "Send the DoubtDesk team an email",
       hoverColor: "hover:text-purple-500 dark:hover:text-purple-400",
     },
-  ];
+  ]
 
   return (
     <footer
@@ -84,14 +84,13 @@ export default function Footer() {
     >
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-purple-500/10 dark:from-blue-600/5 dark:to-purple-600/5 pointer-events-none" />
-
       <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-500/10 dark:bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
-
       <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-purple-500/10 dark:bg-purple-500/10 blur-3xl rounded-full pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
         {/* Top Section */}
         <div className="flex flex-col lg:flex-row lg:justify-between gap-14 pb-12 border-b border-slate-300 dark:border-white/10">
+
           {/* Brand Section */}
           <div className="max-w-md">
             <Link
@@ -107,12 +106,10 @@ export default function Footer() {
                   className="object-cover"
                 />
               </div>
-
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 tracking-tight transition-colors duration-300">
                 DoubtDesk
               </span>
             </Link>
-
             <p className="text-sm leading-7 text-slate-600 dark:text-slate-400">
               Simplifying classroom doubt solving with AI-powered collaboration,
               smart discussions, and interactive virtual learning spaces.
@@ -129,7 +126,6 @@ export default function Footer() {
                 <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-900 dark:text-white mb-5">
                   {section.title}
                 </h4>
-
                 <ul className="space-y-4">
                   {section.links.map((link) => {
                     const isExternal =
