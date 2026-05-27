@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ScrollToTop from "@/components/ScrollToTop";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -115,6 +116,7 @@ export default function RootLayout({
         <body className={`${AppFont.className} scroll-smooth`}>
           <Provider>
             {children}
+            <ScrollToTop />
             <Footer />
             <AnimatedCursor />
           </Provider>
