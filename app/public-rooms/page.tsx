@@ -8,7 +8,6 @@ import DoubtSortSelect, { DoubtSortValue } from "@/components/DoubtSortSelect";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWRInfinite from "swr/infinite";
 import { useInView } from "react-intersection-observer";
-import ScrollToTopButton from "@/components/ScrollToTopButton";
 
 export default function PublicRoomsPage() {
     const pathname = usePathname();
@@ -136,8 +135,6 @@ export default function PublicRoomsPage() {
 
     return (
         <div className="p-4 md:p-8 space-y-6 max-w-[1000px] mx-auto pb-24">
-
-            <ScrollToTopButton />
 
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-white/5">
                 <div className="space-y-1">
