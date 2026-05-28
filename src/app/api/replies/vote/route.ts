@@ -3,6 +3,8 @@ import { repliesTable, replyLikesTable } from "@/configs/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
+import { checkUserBlock } from "@/lib/auth-utils";
+import { buildErrorResponse } from "@/lib/error-handler";
 import { parseAndValidateRequest } from "@/lib/validations/validate";
 import { voteReplySchema } from "@/lib/validations/reply";
 
@@ -14,10 +16,15 @@ export async function POST(req: Request) {
         const { replyId, userName } = data;
 
         const user = await currentUser();
-        const authenticatedUserId = user?.id;
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        if (!authenticatedUserId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const authenticatedUserId = user.id;
+        const email = user.primaryEmailAddress?.emailAddress;
+
+        if (email) {
+            const { isBlocked, errorResponse: blockResponse } = await checkUserBlock(email);
+            if (blockResponse) return blockResponse;
+            if (isBlocked) return blockResponse;
         }
 
 
@@ -91,7 +98,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(result);
     } catch (error) {
-        console.error("Error voting on reply:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        const { status, body } = buildErrorResponse(error);
+        return NextResponse.json(body, { status });
     }
 }
