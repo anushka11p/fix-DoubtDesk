@@ -32,6 +32,7 @@ export default function RecommendedClassrooms() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchRecommendations = async () => {
+        setError(null);
         try {
             const res = await fetch("/api/recommendations");
             const data = await res.json();
@@ -80,8 +81,9 @@ export default function RecommendedClassrooms() {
                 <button
                     onClick={refreshRecommendations}
                     disabled={refreshing}
-                    aria-label={UI_TEXT.RETRY_RECOMMENDATIONS_LABEL}
-                    className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                    aria-disabled={refreshing}
+                    aria-label={refreshing ? "Retrying classroom recommendations" : UI_TEXT.RETRY_RECOMMENDATIONS_LABEL}
+                    className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     <RefreshCw
                         aria-hidden="true"

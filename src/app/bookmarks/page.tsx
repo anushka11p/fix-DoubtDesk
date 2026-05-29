@@ -5,7 +5,7 @@ import { Bookmark, Loader2, ArrowLeft, RefreshCw } from "lucide-react";
 import DoubtCard from "@/components/DoubtCard";
 import { useRouter } from "next/navigation";
 import { useAppUser } from "@/app/provider";
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+import { SignedIn, SignedOut, RedirectToSignIn, useAuth } from "@clerk/nextjs";
 
 const ERROR_MESSAGES = {
   BOOKMARKS_LOAD_FAILED: "Failed to load bookmarks",
@@ -23,6 +23,7 @@ export default function BookmarksPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { appUser } = useAppUser();
+  const { isLoaded, isSignedIn } = useAuth();
 
   const fetchBookmarks = async () => {
     setLoading(true);
@@ -45,8 +46,13 @@ export default function BookmarksPage() {
   };
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      return;
+    }
+
     fetchBookmarks();
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   return (
     <>
