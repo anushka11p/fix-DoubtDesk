@@ -40,7 +40,8 @@ export async function GET(req: Request) {
             // but usually this should be blocked.
         }
 
-        let conditions: any[] = [];
+        let query = db.select().from(doubtsTable);
+        let conditions: SQL<unknown>[] = [];
 
         // Base Classroom scoping
         if (classroomId) {
@@ -105,9 +106,7 @@ export async function GET(req: Request) {
         const limit = limitStr ? parseInt(limitStr) : 20;
         const offset = offsetStr ? parseInt(offsetStr) : (page - 1) * limit;
 
-        let doubts: any[] = await query.where(and(...conditions));
-
-        if (tag && tag !== "All" && doubts.length > 0) {
+        if (tag && tag !== "All") {
             const normalizedTag = tag.trim().replace(/\s+/g, " ").toLowerCase();
             conditions.push(
                 inArray(
