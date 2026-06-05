@@ -29,16 +29,21 @@ export interface SimilarDoubt {
 
 export async function POST(req: Request) {
   try {
-    const { email } = await requireAuth();
     const body = await req.json();
     const { content, classroomId: rawClassroomId } = body as {
       content: string;
       classroomId?: unknown;
     };
     const classroomId = parseOptionalClassroomId(rawClassroomId);
+    let aiQuotaIdentifier =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip")?.trim() ||
+      "anonymous";
 
     if (classroomId) {
+      const { email } = await requireAuth();
       await requireMembership(email, classroomId);
+      aiQuotaIdentifier = email;
     }
 
     if (
@@ -74,7 +79,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ similarDoubts: [] });
     }
 
-    const availabilityResponse = await enforceAiAvailability(email);
+    const availabilityResponse = await enforceAiAvailability(aiQuotaIdentifier);
     if (availabilityResponse) return availabilityResponse;
 
     // Build a compact list for Groq to compare
