@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/configs/db';
 import { membershipsTable } from '@/configs/schema';
-import { eq, count } from 'drizzle-orm';
+import { eq, count, asc } from 'drizzle-orm';
 import { checkUserBlock } from '@/lib/auth-utils';
 import { buildErrorResponse } from '@/lib/error-handler';
 import {
@@ -10,7 +10,7 @@ import {
     requireMembership,
 } from '@/lib/auth/membership-guard';
 
-const PRIVILEGED_MEMBER_ROLES = new Set(['teacher', 'admin']);
+const PRIVILEGED_MEMBER_ROLES = new Set(['teacher', 'admin', 'owner']);
 
 function canViewMemberEmails(role: string) {
     return PRIVILEGED_MEMBER_ROLES.has(role.toLowerCase());
@@ -56,10 +56,11 @@ export async function GET(req: Request) {
             })
             .from(membershipsTable)
             .where(eq(membershipsTable.classroomId, classroomId))
+            .orderBy(asc(membershipsTable.id))
             .limit(limit)
             .offset(offset);
 
-        const canViewEmails = ["teacher", "owner", "admin"].includes(membership.role.toLowerCase());
+        const canViewEmails = canViewMemberEmails(membership.role);
         const processedMembers = canViewEmails
             ? members.map(({ id, ...m }) => m)
             : members.map((m) => ({
