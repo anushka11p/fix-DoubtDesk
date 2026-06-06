@@ -4,6 +4,10 @@ describe('getDatabaseUrl', () => {
     const originalDatabaseUrl = process.env.DATABASE_URL;
     const originalPublicDatabaseUrl = process.env.NEXT_PUBLIC_NEON_DB_CONNECTION_STRING;
 
+    beforeEach(() => {
+        jest.resetModules();
+    });
+
     afterEach(() => {
         if (originalDatabaseUrl) {
             process.env.DATABASE_URL = originalDatabaseUrl;
