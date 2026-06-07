@@ -1,6 +1,6 @@
 import { db } from "@/configs/db";
 import { repliesTable, doubtsTable, classroomsTable, replyLikesTable, usersTable, membershipsTable, notificationsTable } from "@/configs/schema";
-import { eq, asc, sql, and } from "drizzle-orm";
+import { eq, asc, sql, and, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { moderateContent, handleModerationViolation } from "@/lib/moderation";
@@ -41,7 +41,9 @@ export async function GET(req: Request) {
         const doubtId = parseInt(doubtIdStr);
 
         // Security: Verify doubt visibility
-        const [doubt] = await db.select().from(doubtsTable).where(eq(doubtsTable.id, doubtId));
+        const [doubt] = await db.select().from(doubtsTable).where(
+            and(eq(doubtsTable.id, doubtId), isNull(doubtsTable.deletedAt))
+        );
         if (!doubt) return NextResponse.json({ error: "Doubt not found" }, { status: 404 });
 
         if (doubt.classroomId && email) {
@@ -127,7 +129,9 @@ export async function POST(req: Request) {
         }
 
         // Security: Check if it's a teacher doubt and verify classroom membership
-        const [doubt] = await db.select().from(doubtsTable).where(eq(doubtsTable.id, doubtId));
+        const [doubt] = await db.select().from(doubtsTable).where(
+            and(eq(doubtsTable.id, doubtId), isNull(doubtsTable.deletedAt))
+        );
         
         if (!doubt) {
             return NextResponse.json({ error: "Doubt not found" }, { status: 404 });
@@ -160,17 +164,31 @@ export async function POST(req: Request) {
                         { status: 403 }
                     );
                 }
-        }
+            }
         }
         
+        let parsedCreatedAt: Date | undefined = undefined;
+        if (data.createdAt) {
+            const d = new Date(data.createdAt);
+            if (isNaN(d.getTime())) {
+                return NextResponse.json({ error: "Invalid createdAt date format" }, { status: 400 });
+            }
+            const now = new Date();
+            const age = now.getTime() - d.getTime();
+            const maxOfflineDuration = 30 * 24 * 60 * 60 * 1000; // 30 days
+            if (age >= -300000 && age <= maxOfflineDuration) {
+                parsedCreatedAt = d;
+            }
+        }
 
-                    const newReply = await db.insert(repliesTable).values({
+        const newReply = await db.insert(repliesTable).values({
             doubtId: doubtId,
             userName,
             userEmail: email,
             type,
             content: content || null,
             imageUrl: imageUrl || null,
+            createdAt: parsedCreatedAt
         }).returning();
 
         createReplyNotification({
