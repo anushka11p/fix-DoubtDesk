@@ -14,18 +14,18 @@ jest.mock("@clerk/nextjs", () => ({
   useUser: jest.fn(),
 }));
 
-// Mock fetch
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    json: () => Promise.resolve({}),
-  })
-) as jest.Mock;
 
 describe("ThemeToggle", () => {
   const mockSetTheme = jest.fn();
+  const originalFetch = global.fetch;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve({}),
+      })
+    ) as jest.Mock;
     (useTheme as jest.Mock).mockReturnValue({
       resolvedTheme: "light",
       setTheme: mockSetTheme,
@@ -33,6 +33,10 @@ describe("ThemeToggle", () => {
     (useUser as jest.Mock).mockReturnValue({
       isSignedIn: false,
     });
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it("renders correctly in light mode", () => {

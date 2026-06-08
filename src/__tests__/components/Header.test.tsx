@@ -49,12 +49,12 @@ describe("Header", () => {
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
     (usePathname as jest.Mock).mockReturnValue("/");
     (useAppUser as jest.Mock).mockReturnValue({ appUser: null });
-    
     // Mock window.history.length to enable back button by default
-    Object.defineProperty(window, 'history', {
-      value: { length: 2 },
-      writable: true
-    });
+    jest.spyOn(window.history, 'length', 'get').mockReturnValue(2);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("renders correctly", () => {
@@ -72,10 +72,7 @@ describe("Header", () => {
   });
 
   it("disables back button if history is empty", () => {
-    Object.defineProperty(window, 'history', {
-      value: { length: 1 },
-      writable: true
-    });
+    jest.spyOn(window.history, 'length', 'get').mockReturnValue(1);
     render(<Header />);
     const backButton = screen.getAllByRole("button", { name: /go back/i })[0];
     expect(backButton).toBeDisabled();
