@@ -16,6 +16,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MentorModeToggle } from "@/components/MentorModeToggle";
 import type { AIMode, ChatMessage } from "@/types/ai-chat";
+import type { Doubt } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,6 +24,12 @@ import type { AIMode, ChatMessage } from "@/types/ai-chat";
 interface DisplayMessage extends ChatMessage {
   id: string;
   isCelebration?: boolean;
+}
+
+interface AskAIViewProps {
+  classroomId?: number | null;
+  onSuccess?: () => void;
+  initialDoubt?: Doubt | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -39,7 +46,7 @@ function isCelebrationMessage(text: string): boolean {
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export default function AskAIView() {
+export default function AskAIView({ classroomId = null, onSuccess, initialDoubt }: AskAIViewProps) {
   const [mode, setMode] = useState<AIMode>(() => {
     if (typeof window === "undefined") return "direct";
     return (localStorage.getItem("dd_ai_mode") as AIMode) ?? "direct";
@@ -57,6 +64,50 @@ export default function AskAIView() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (initialDoubt) {
+      const doubtText = initialDoubt.content === "Visual Inquiry" ? "" : (initialDoubt.content ?? "");
+      const initialUserMsg: DisplayMessage = {
+        id: "initial-user-" + initialDoubt.id,
+        role: "user",
+        content: doubtText,
+      };
+
+      setMessages([initialUserMsg]);
+
+      const fetchSolution = async () => {
+        setIsLoading(true);
+        try {
+          const res = await fetch(`/api/replies?doubtId=${initialDoubt.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              const solution = data.find(
+                (r: any) =>
+                  r.type === "solution" || r.userName === "DoubtDesk AI"
+              );
+              if (solution) {
+                const assistantMsg: DisplayMessage = {
+                  id: "initial-assistant-" + initialDoubt.id,
+                  role: "assistant",
+                  content: solution.content,
+                  isCelebration: mode === "mentor" && isCelebrationMessage(solution.content),
+                };
+                setMessages([initialUserMsg, assistantMsg]);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching solution for initial doubt:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      void fetchSolution();
+    }
+  }, [initialDoubt]);
 
   function handleModeChange(newMode: AIMode) {
     setMode(newMode);
@@ -86,7 +137,7 @@ export default function AskAIView() {
       const res = await fetch("/api/ask-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed, history, mode }),
+        body: JSON.stringify({ message: trimmed, history, mode, classroomId }),
       });
 
       if (!res.ok) {
@@ -104,6 +155,7 @@ export default function AskAIView() {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
+      onSuccess?.();
     } catch {
       setMessages((prev) => [
         ...prev,
