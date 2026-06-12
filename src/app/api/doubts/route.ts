@@ -10,6 +10,7 @@ import {
   membershipsTable,
 } from "@/configs/schema";
 import { categorizeDoubt } from "@/lib/ai/categorizer";
+import { safeGenerateEmbedding } from "@/lib/ai/embeddings";
 import { and, eq, inArray, isNull, or, not, sql, SQL, ilike, desc, getTableColumns, count } from "drizzle-orm";
 import { moderateContent, handleModerationViolation } from "@/lib/moderation";
 import { buildErrorResponse, errorResponse } from "@/lib/error-handler";
@@ -17,7 +18,8 @@ import { checkUserBlock } from "@/lib/auth-utils";
 import { parseAndValidateRequest } from "@/lib/validations/validate";
 import { createDoubtSchema } from "@/lib/validations/doubt";
 import { createClassroomDoubtNotifications } from "@/lib/notifications/service";
-import { inngest } from "@/inngest/client"; 
+import { inngest } from "@/inngest/client";
+import { buildSearchCondition, buildRankOrder } from "@/lib/search"; // NEW
 import { canTeach } from "@/lib/auth/membership-guard";
 import { currentUser } from "@clerk/nextjs/server";
 import { parsePositiveInt } from "@/lib/utils";
@@ -91,13 +93,13 @@ export async function GET(req: Request) {
             conditions.push(eq(doubtsTable.subject, subject));
         }
 
+        // NEW: Replace ilike sequential scan with indexed full-text search
+        // Falls back gracefully — if search is empty, no condition is added
         if (search) {
-            const searchCondition = or(
-                ilike(doubtsTable.content, `%${search}%`),
-                ilike(doubtsTable.subject, `%${search}%`),
-                ilike(doubtsTable.userName, `%${search}%`)
-            );
-            if (searchCondition) conditions.push(searchCondition);
+            const searchCondition = buildSearchCondition(search);
+            if (searchCondition) {
+                conditions.push(searchCondition);
+            }
         }
 
         if (type && type !== "All") {
@@ -165,6 +167,12 @@ export async function GET(req: Request) {
             .from(doubtsTable);
 
         const orderByFields: SQL[] = [desc(doubtsTable.isPinned)];
+
+        // NEW: When searching, rank by relevance first, then fall through to sort
+        if (search) {
+            const rankOrder = buildRankOrder(search);
+            if (rankOrder) orderByFields.push(rankOrder);
+        }
 
         if (sort === "popular") {
             orderByFields.push(desc(doubtsTable.likes));
@@ -316,9 +324,24 @@ export async function POST(req: Request) {
                 imageUrl,
                 classroomId: parsedClassroomId,
                 type: doubtType,
-                createdAt: parsedCreatedAt
             })
             .returning();
+
+        // Generate and persist embedding for semantic duplicate detection.
+        // Fail open: doubt creation should not block if embeddings are unavailable.
+        try {
+            const embeddingInput = `${subject}\n${content || ""}`.trim();
+            const embedding = await safeGenerateEmbedding(embeddingInput);
+            if (embedding && Array.isArray(embedding) && embedding.length > 0) {
+                await db
+                    .update(doubtsTable)
+                    .set({ embedding: embedding as any })
+                    .where(eq(doubtsTable.id, newDoubt.id));
+            }
+        } catch (err) {
+            console.error("Failed to generate/store doubt embedding:", err);
+        }
+
 
         if (parsedClassroomId) {
             inngest.send({
